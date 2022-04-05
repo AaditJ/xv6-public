@@ -322,11 +322,11 @@ LOAD bootmain.o
 .debug_frame
  *(.debug_frame)
 
-.debug_str      0x0000000000000000      0x226
+.debug_str      0x0000000000000000      0x23c
  *(.debug_str)
- .debug_str     0x0000000000000000       0x34 bootasm.o
- .debug_str     0x0000000000000034      0x1f2 bootmain.o
-                                        0x222 (size before relaxing)
+ .debug_str     0x0000000000000000       0x4a bootasm.o
+ .debug_str     0x000000000000004a      0x1f2 bootmain.o
+                                        0x238 (size before relaxing)
 
 .debug_loc      0x0000000000000000      0x2bb
  *(.debug_loc)

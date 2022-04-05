@@ -534,3 +534,9 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+int
+mprotect(void)
+{
+  return 22;
+}
