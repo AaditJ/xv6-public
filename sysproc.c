@@ -92,5 +92,14 @@ sys_uptime(void)
 
 int
 sys_mprotect(void){
-  return mprotect();
+
+  void *addr;
+  int len;
+
+  if(argptr(0,(void*)&addr, sizeof(void*)) < 0){
+    return -1;
+  }
+  argint(1,&len);
+
+  return mprotect(addr,len);
 }

@@ -39,8 +39,10 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   pte_t *pgtab;
 
   pde = &pgdir[PDX(va)];
+
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+    //cprintf("%p\n",pgtab);
   } else {
     // No page table at this pde, so make one (if caller didn't forbid it)
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)

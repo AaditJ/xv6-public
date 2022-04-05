@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -536,7 +537,41 @@ procdump(void)
 }
 
 int
-mprotect(void)
+mprotect(void *addr, int len)
 {
-  return 22;
+  struct proc *curproc = myproc();
+  pde_t *pgdir;
+
+  pgdir = curproc->pgdir;
+  cprintf("%d\n",curproc->pgdir);
+
+  // pte_t *pte;
+
+  char* a = (char*)PGROUNDDOWN((uint)addr);
+
+
+  // cprintf("%d\n", pte);
+  // cprintf("%p \n", addr);
+  // cprintf("%d\n", (uint)addr);
+  // cprintf("%d \n", *((int*)addr));
+  // cprintf("%d \n", len);
+  // int x = *((uint*)addr) & (PGSIZE-1);
+  // cprintf("This one: %d\n", x);
+  
+  pde_t *pde = &pgdir[PDX(a)];
+  
+  cprintf("%d \n", pde);
+
+  //!(*addr & PTE_P)
+  if(len <= 0 || !(((uint)addr & (PGSIZE-1)) == 0) ){
+    
+    cprintf("Falied\n");
+    //return -1;
+  }
+
+  // for(int x = (uint)addr; x < ((uint)addr + PGSIZE*len); x = x +1){
+  //   cprintf("%d \n", x);
+  // }
+
+  return 0;
 }

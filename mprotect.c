@@ -5,6 +5,11 @@
 
 int main(int argc,char *argv[])
 {
-    mprotect();
+
+    int x = 8100;
+    int *str = &x;
+    int len = 1;
+
+    mprotect(str, len);
     exit();
 }

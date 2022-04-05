@@ -101,6 +101,8 @@ exec(char *path, char **argv)
   // Commit to the user image.
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
+
+  
   curproc->vbase = vbase;
   curproc->vlimit = vlimit;
   curproc->tf->eip = elf.entry;  // main
