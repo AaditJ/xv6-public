@@ -2,14 +2,18 @@
 #include "stat.h"
 #include "user.h"
 #include "fcntl.h"
+#include "mmu.h"
 
 int main(int argc,char *argv[])
 {
 
-    int x = 8100;
-    int *str = &x;
+    int *str;
+    str = (int*)PGROUNDUP((uint)sbrk(0));
+    
+    printf(1,"%d\n", str);
     int len = 1;
 
-    mprotect(str, len);
+
+    mprotect((void *)str, len);
     exit();
 }

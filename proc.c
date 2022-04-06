@@ -536,42 +536,55 @@ procdump(void)
   }
 }
 
+static pte_t *
+walkpgdir(pde_t *pgdir, const void *va, int alloc)
+{
+  pde_t *pde;
+  pte_t *pgtab;
+
+  pde = &pgdir[PDX(va)];
+
+  if(*pde & PTE_P){
+    pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+    
+  } else {
+    // No page table at this pde, so make one (if caller didn't forbid it)
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+      return 0;
+    // Make sure all those PTE_P bits are zero.
+    memset(pgtab, 0, PGSIZE);
+    // The permissions here are overly generous, but they can
+    // be further restricted by the permissions in the page table
+    // entries, if necessary.
+    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+  }
+  return &pgtab[PTX(va)];
+}
+
 int
 mprotect(void *addr, int len)
 {
-  struct proc *curproc = myproc();
-  pde_t *pgdir;
-
-  pgdir = curproc->pgdir;
-  cprintf("%d\n",curproc->pgdir);
-
-  // pte_t *pte;
-
-  char* a = (char*)PGROUNDDOWN((uint)addr);
-
-
-  // cprintf("%d\n", pte);
-  // cprintf("%p \n", addr);
-  // cprintf("%d\n", (uint)addr);
-  // cprintf("%d \n", *((int*)addr));
-  // cprintf("%d \n", len);
-  // int x = *((uint*)addr) & (PGSIZE-1);
-  // cprintf("This one: %d\n", x);
   
-  pde_t *pde = &pgdir[PDX(a)];
-  
-  cprintf("%d \n", pde);
-
-  //!(*addr & PTE_P)
-  if(len <= 0 || !(((uint)addr & (PGSIZE-1)) == 0) ){
-    
-    cprintf("Falied\n");
-    //return -1;
+  if(len <=0 || ((uint) addr % PGSIZE) != 0){
+    cprintf("Hi");
+    return -1;
   }
+  
+  pte_t *pte;
+  cprintf("Address: %d\n", (uint)addr);
 
-  // for(int x = (uint)addr; x < ((uint)addr + PGSIZE*len); x = x +1){
-  //   cprintf("%d \n", x);
-  // }
+  uint current_address = (uint)addr;
+  do{
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address,0);
+    current_address += PGSIZE;
+
+    *pte |= (PTE_P | PTE_U);
+
+  } while(current_address <((uint)addr + len));
+
+  cprintf("Bye\n");
+  lcr3(V2P(myproc()->pgdir));
+  cprintf("Bye2\n");
 
   return 0;
 }

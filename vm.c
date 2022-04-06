@@ -97,7 +97,7 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 //   0x1000..KERNBASE: user memory (text+data+stack+heap), mapped to
 //                     phys memory allocated by the kernel
 //   KERNBASE..KERNBASE+EXTMEM: mapped to 0..EXTMEM (for I/O space)
-//   KERNBASE+EXTMEM..data: mapped to EXTMEM..V2P(data)
+//   KERNBASE+EXTMEM..data: mapped to EXTMEMe = V2P(pgtab) | PTE_P | PTE_W | PTE_U;..V2P(data)
 //                for the kernel's instructions and r/o data
 //   data..KERNBASE+PHYSTOP: mapped to V2P(data)..PHYSTOP,
 //                                  rw data + free physical memory
