@@ -570,17 +570,21 @@ mprotect(void *addr, int len)
     return -1;
   }
   
+  cprintf("Address: %p\n", &addr);
+
   pte_t *pte;
   cprintf("Address: %d\n", (uint)addr);
 
   uint current_address = (uint)addr;
+
   do{
     pte = walkpgdir(myproc()->pgdir,(void *)current_address,0);
+
+    *pte &= PTE_U;
+
     current_address += PGSIZE;
 
-    *pte |= (PTE_P | PTE_U);
-
-  } while(current_address <((uint)addr + len));
+  } while(current_address <((uint)addr + len*PGSIZE));
 
   cprintf("Bye\n");
   lcr3(V2P(myproc()->pgdir));
