@@ -539,8 +539,11 @@ procdump(void)
 static pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
+
   pde_t *pde;
   pte_t *pgtab;
+
+  cprintf("%d\n", (uint)va);
 
   pde = &pgdir[PDX(va)];
 
@@ -549,46 +552,70 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     
   } else {
     // No page table at this pde, so make one (if caller didn't forbid it)
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0){
       return 0;
+    }
+
+
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
+    cprintf("pgtab: %p\n", pgtab);
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
+
   return &pgtab[PTX(va)];
 }
 
 int
 mprotect(void *addr, int len)
 {
-  
   if(len <=0 || ((uint) addr % PGSIZE) != 0){
-    cprintf("Hi");
+    //cprintf("Error\n");
     return -1;
   }
-  
-  cprintf("Address: %p\n", &addr);
 
   pte_t *pte;
-  cprintf("Address: %d\n", (uint)addr);
-
   uint current_address = (uint)addr;
+  
+  // if(walkpgdir(myproc()->pgdir,(void *)current_address,0) == 0){
+  //   cprintf("No page table found\n");
+  //   return -1;
+  // }
 
   do{
-    pte = walkpgdir(myproc()->pgdir,(void *)current_address,0);
 
-    *pte &= PTE_U;
+    cprintf("LOOP\n");
+    
+    // Automatically assign pgdir to any address
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+
+    cprintf("%d\n", pte);
+
+    pte_t *p;
+    p = pte;
+
+    //*pte &= ~PTE_W;
+
+    *p = 100;
 
     current_address += PGSIZE;
-
+    cprintf("CURRENT ADDRESS %d\n", current_address);
+    cprintf("MAX ADDRESS %d\n", (uint)addr + len*PGSIZE);
   } while(current_address <((uint)addr + len*PGSIZE));
 
-  cprintf("Bye\n");
+  current_address = (uint)addr;
+  pte = walkpgdir(myproc()->pgdir,(void *)current_address,0);
+  cprintf("%p", pte);
+
+  // NOTE: This is causing nullderef error for some reason
   lcr3(V2P(myproc()->pgdir));
-  cprintf("Bye2\n");
+
+  
+
 
   return 0;
 }
