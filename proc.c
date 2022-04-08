@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -533,4 +534,80 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+static pte_t *
+walkpgdir(pde_t *pgdir, const void *va, int alloc)
+{
+  pde_t *pde;
+  pte_t *pgtab;
+  pde = &pgdir[PDX(va)];
+
+  if(*pde & PTE_P){
+    pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+  } else {
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0){
+      return 0;
+    }
+    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+  }
+
+  return &pgtab[PTX(va)];
+}
+
+int
+mprotect(void *addr, int len)
+{
+  // Checks if length is valid and if the address is page aligned or not
+  if(len <=0 || ((uint) addr % PGSIZE) != 0){
+    return -1;
+  }
+
+  pte_t *pte;
+  uint current_address = (uint)addr;
+
+  // Repeats loop for number of pages given by len 
+  do{
+    // Gets the page table at specified address
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+    
+    // Makes address not writeable
+    *pte &= ~PTE_W;
+
+    // Increments current address to the next page address
+    current_address += PGSIZE;
+  } while(current_address <((uint)addr + len*PGSIZE));
+
+  // Updates page directory
+  lcr3(V2P(myproc()->pgdir));
+  return 0;
+}
+
+int
+munprotect(void *addr, int len)
+{
+   // Checks if length is valid and if the address is page aligned or not
+  if(len <=0 || ((uint) addr % PGSIZE) != 0){
+    return -1;
+  }
+
+  pte_t *pte;
+  uint current_address = (uint)addr;
+
+  // Repeats loop for number of pages given by len 
+  do{
+
+    // Gets the page table at specified address
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+
+    // Makes address  writeable
+    *pte |= PTE_W;
+
+    // Increments current address to the next page address
+    current_address += PGSIZE;
+  } while(current_address <((uint)addr + len*PGSIZE));
+
+  // Updates page directory
+  lcr3(V2P(myproc()->pgdir));
+  return 0;
 }
