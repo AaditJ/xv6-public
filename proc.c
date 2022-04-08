@@ -537,7 +537,7 @@ procdump(void)
 }
 
 static pte_t *
-walkpgdir(pde_t *pgdir, const void *va, int alloc)
+walkpgdir(pde_t *pgdir, const void *va)
 {
   pde_t *pde;
   pte_t *pgtab;
@@ -546,12 +546,8 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0){
-      return 0;
-    }
-    *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+    return 0;
   }
-
   return &pgtab[PTX(va)];
 }
 
@@ -569,7 +565,7 @@ mprotect(void *addr, int len)
   // Repeats loop for number of pages given by len 
   do{
     // Gets the page table at specified address
-    pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address);
     
     // Makes address not writeable
     *pte &= ~PTE_W;
@@ -598,7 +594,7 @@ munprotect(void *addr, int len)
   do{
 
     // Gets the page table at specified address
-    pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address);
 
     // Makes address  writeable
     *pte |= PTE_W;
