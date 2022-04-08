@@ -539,31 +539,16 @@ procdump(void)
 static pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
-
   pde_t *pde;
   pte_t *pgtab;
-
-  cprintf("%d\n", (uint)va);
-
   pde = &pgdir[PDX(va)];
 
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-    
   } else {
-    // No page table at this pde, so make one (if caller didn't forbid it)
-
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0){
       return 0;
     }
-
-
-    // Make sure all those PTE_P bits are zero.
-    memset(pgtab, 0, PGSIZE);
-    cprintf("pgtab: %p\n", pgtab);
-    // The permissions here are overly generous, but they can
-    // be further restricted by the permissions in the page table
-    // entries, if necessary.
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
   }
 
@@ -573,49 +558,56 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 int
 mprotect(void *addr, int len)
 {
+  // Checks if length is valid and if the address is page aligned or not
   if(len <=0 || ((uint) addr % PGSIZE) != 0){
-    //cprintf("Error\n");
     return -1;
   }
 
   pte_t *pte;
   uint current_address = (uint)addr;
-  
-  // if(walkpgdir(myproc()->pgdir,(void *)current_address,0) == 0){
-  //   cprintf("No page table found\n");
-  //   return -1;
-  // }
 
+  // Repeats loop for number of pages given by len 
   do{
-
-    cprintf("LOOP\n");
-    
-    // Automatically assign pgdir to any address
+    // Gets the page table at specified address
     pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+    
+    // Makes address not writeable
+    *pte &= ~PTE_W;
 
-    cprintf("%d\n", pte);
-
-    pte_t *p;
-    p = pte;
-
-    //*pte &= ~PTE_W;
-
-    *p = 100;
-
+    // Increments current address to the next page address
     current_address += PGSIZE;
-    cprintf("CURRENT ADDRESS %d\n", current_address);
-    cprintf("MAX ADDRESS %d\n", (uint)addr + len*PGSIZE);
   } while(current_address <((uint)addr + len*PGSIZE));
 
-  current_address = (uint)addr;
-  pte = walkpgdir(myproc()->pgdir,(void *)current_address,0);
-  cprintf("%p", pte);
-
-  // NOTE: This is causing nullderef error for some reason
+  // Updates page directory
   lcr3(V2P(myproc()->pgdir));
+  return 0;
+}
 
-  
+int
+munprotect(void *addr, int len)
+{
+   // Checks if length is valid and if the address is page aligned or not
+  if(len <=0 || ((uint) addr % PGSIZE) != 0){
+    return -1;
+  }
 
+  pte_t *pte;
+  uint current_address = (uint)addr;
 
+  // Repeats loop for number of pages given by len 
+  do{
+
+    // Gets the page table at specified address
+    pte = walkpgdir(myproc()->pgdir,(void *)current_address, 1);
+
+    // Makes address  writeable
+    *pte |= PTE_W;
+
+    // Increments current address to the next page address
+    current_address += PGSIZE;
+  } while(current_address <((uint)addr + len*PGSIZE));
+
+  // Updates page directory
+  lcr3(V2P(myproc()->pgdir));
   return 0;
 }
