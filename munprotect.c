@@ -52,10 +52,10 @@ main(int argc, char *argv[]){
         printf(1,"Memory successfully made writeable, return val: %d\n", retval);
     }
 
-    printf(1,"Attempting to set memory to writeable address, should pass");
+    printf(1,"Attempting to set memory to writeable address, should pass\n");
     // Setting the memory at writeable address, should pass
     memset((void*)addr , 5, 2*PGSIZE);
 
-    printf(1,"Memory set successfully");
+    printf(1,"Memory set successfully\n");
     exit();
 }
